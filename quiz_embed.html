@@ -1,0 +1,84 @@
+<style>
+  .quiz-section { font-family: 'DM Sans', sans-serif; padding: 2rem 2.5rem; background: #f5f0e8; }
+  .quiz-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: #0a0a0a; margin-bottom: 0.25rem; letter-spacing: 1px; }
+  .quiz-sub { font-size: 13px; color: #555; margin-bottom: 1.5rem; border-bottom: 2px solid #0a0a0a; padding-bottom: 0.75rem; }
+  .quiz-wrap { max-width: 750px; }
+  .q-card { background: white; border: 2px solid #0a0a0a; padding: 1.25rem; margin-bottom: 1rem; }
+  .q-text { font-size: 15px; font-weight: 600; color: #0a0a0a; margin-bottom: 1rem; }
+  .scenario { font-size: 13px; color: #444; background: #f5f0e8; border-left: 4px solid #c8382a; padding: 0.6rem 0.9rem; margin-bottom: 1rem; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt { background: #f5f0e8; border: 1.5px solid #ccc; padding: 0.6rem 0.9rem; font-size: 13px; color: #222; cursor: pointer; text-align: left; font-family: 'DM Sans', sans-serif; }
+  .opt:hover { background: #e8e3d8; }
+  .opt.correct { background: #d4edda; border-color: #3a7d44; color: #1a4d2a; }
+  .opt.wrong { background: #f8d7da; border-color: #a32d2d; color: #501313; }
+  .feedback { font-size: 13px; margin-top: 0.75rem; padding: 0.5rem 0.75rem; display: none; }
+  .feedback.show { display: block; }
+  .feedback.ok { background: #d4edda; color: #1a4d2a; border-left: 3px solid #3a7d44; }
+  .feedback.no { background: #f8d7da; color: #501313; border-left: 3px solid #a32d2d; }
+  .progress-bar { background: #ddd; height: 6px; margin-bottom: 1.5rem; }
+  .progress-fill { height: 100%; background: #c8382a; transition: width 0.3s; }
+  .score-box { text-align: center; padding: 2rem 1rem; background: white; border: 2px solid #0a0a0a; }
+  .score-num { font-family: 'Bebas Neue', sans-serif; font-size: 72px; color: #c8382a; line-height: 1; }
+  .score-label { font-size: 15px; color: #555; margin-top: 0.25rem; }
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+  .nav-btn { background: #0a0a0a; color: #f5f0e8; border: none; padding: 0.5rem 1.25rem; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; letter-spacing: 1px; }
+  .nav-btn:disabled { opacity: 0.35; cursor: default; }
+  .q-count { font-size: 13px; color: #555; }
+  .restart-btn { background: #c8382a; color: white; border: none; padding: 0.6rem 1.5rem; font-size: 14px; cursor: pointer; margin-top: 1rem; font-family: 'DM Sans', sans-serif; }
+</style>
+
+<div class="quiz-section">
+  <div class="quiz-title">Test Your Knowledge</div>
+  <div class="quiz-sub">Communication Systems — Scenario Quiz</div>
+  <div class="quiz-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+    <div id="quiz-area"></div>
+    <div class="nav">
+      <span class="q-count" id="q-count"></span>
+      <button class="nav-btn" id="next-btn" disabled onclick="nextQ()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const qs = [
+  { scenario: "A tornado warning needs to reach people in rural areas who may not have internet or TV.", q: "Which communication system is BEST for this situation?", opts: ["Internet", "Print (newspaper)", "Radio", "Television"], ans: 2, why: "Radio reaches remote areas quickly and doesn't require a screen or internet connection — perfect for emergency alerts!" },
+  { scenario: "A student wants to read an in-depth article about climate change and keep it for future reference.", q: "Which system has this as a KEY BENEFIT?", opts: ["Radio", "Print", "Television", "Internet"], ans: 1, why: "Print provides detailed, in-depth information and is tangible — you can keep it and flip back to it anytime." },
+  { scenario: "A news event happens at 2pm. By 2:01pm, thousands of people have already commented and shared reactions.", q: "Which system makes this possible?", opts: ["Television", "Print", "Radio", "Internet"], ans: 3, why: "The internet is the only two-way system — it's fast AND allows people to respond and interact in real time." },
+  { scenario: "A sports fan wants to WATCH highlights AND hear commentary for a game they missed.", q: "Which system combines BOTH audio and visual?", opts: ["Radio", "Print", "Television", "Internet"], ans: 2, why: "Television combines audio and visual — though the internet also does! TV is the classic example from our chart." },
+  { scenario: "Maria wants to share her opinion on a news story with millions of people worldwide.", q: "Which is the BIGGEST drawback of radio for Maria's goal?", opts: ["It's too slow", "It's one-way — listeners can't respond", "It only reaches local areas", "It requires a smartphone"], ans: 1, why: "Radio is one-way communication. Maria can't share her opinion or get responses from the audience." },
+  { scenario: "A family has no smartphone, computer, or internet access.", q: "Which system's drawback directly affects them most?", opts: ["Radio — audio only", "Television — needs electricity", "Print — distributes slowly", "Internet — requires technology access"], ans: 3, why: "The internet requires devices like computers or smartphones — a key drawback that creates a 'digital divide.'" },
+  { scenario: "A local newspaper reports on a school event. Only about 500 people in town read it.", q: "Which drawback of print does this BEST illustrate?", opts: ["It's one-way communication", "It has limited reach, especially for small publications", "It requires electricity", "It can be overwhelming"], ans: 1, why: "Print has limited reach — especially small, local publications — compared to global systems like the internet." }
+];
+let cur = 0, score = 0, answered = false;
+function render() {
+  const area = document.getElementById('quiz-area');
+  if (cur >= qs.length) {
+    const pct = Math.round((score / qs.length) * 100);
+    area.innerHTML = `<div class="score-box"><div class="score-num">${score}/${qs.length}</div><div class="score-label">${pct >= 85 ? 'Excellent work!' : pct >= 60 ? 'Good effort — review your notes!' : 'Keep studying!'} You scored ${pct}%</div><button class="restart-btn" onclick="restart()">Try Again</button></div>`;
+    document.getElementById('next-btn').style.display = 'none';
+    document.getElementById('q-count').textContent = '';
+    document.getElementById('prog').style.width = '100%';
+    return;
+  }
+  const q = qs[cur];
+  document.getElementById('prog').style.width = ((cur / qs.length) * 100) + '%';
+  document.getElementById('q-count').textContent = `Question ${cur + 1} of ${qs.length}`;
+  document.getElementById('next-btn').disabled = true;
+  answered = false;
+  area.innerHTML = `<div class="q-card"><div class="scenario">📋 ${q.scenario}</div><div class="q-text">${q.q}</div><div class="opts">${q.opts.map((o,i) => `<button class="opt" onclick="pick(${i})">${o}</button>`).join('')}</div><div class="feedback" id="fb"></div></div>`;
+}
+function pick(i) {
+  if (answered) return;
+  answered = true;
+  const q = qs[cur];
+  document.querySelectorAll('.opt').forEach((o, idx) => { o.disabled = true; if (idx === q.ans) o.classList.add('correct'); else if (idx === i) o.classList.add('wrong'); });
+  const fb = document.getElementById('fb');
+  if (i === q.ans) { score++; fb.textContent = '✓ Correct! ' + q.why; fb.className = 'feedback show ok'; }
+  else { fb.textContent = '✗ Not quite. ' + q.why; fb.className = 'feedback show no'; }
+  document.getElementById('next-btn').disabled = false;
+}
+function nextQ() { cur++; render(); }
+function restart() { cur = 0; score = 0; answered = false; document.getElementById('next-btn').style.display = ''; render(); }
+render();
+</script>
